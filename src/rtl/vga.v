@@ -307,6 +307,29 @@ module vga(
         end
     end // vsync_logic
 
+
+  //----------------------------------------------------------------
+  // rgb_update
+  //----------------------------------------------------------------
+  always @*
+    begin : rgb_update
+      red_new = 4'h0;
+      red_we  = 0;
+      green_new = 4'h0;
+      green_we  = 0;
+      blue_new = 4'h0;
+      blue_we  = 0;
+
+      if (button0_reg)
+        begin
+          red_new   = red_reg + 4'h1;
+          red_we    = 1;
+          green_new = green_reg + 4'h3;
+          green_we  = 1;
+          blue_new  = blue_reg + 4'h5;
+          blue_we   = 1;
+        end
+    end // rgb_update
 endmodule // vga
 
 //======================================================================
