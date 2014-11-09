@@ -342,12 +342,22 @@ module vga(
   //----------------------------------------------------------------
   always @*1p
     begin : rgb_update
-      red_new = 4'h0;
-      red_we  = 0;
+      red_new   = 4'h0;
+      red_we    = 0;
       green_new = 4'h0;
       green_we  = 0;
-      blue_new = 4'h0;
-      blue_we  = 0;
+      blue_new  = 4'h0;
+      blue_we   = 0;
+
+      if (button1_reg && (debug_delay_ctr_reg == 32'h00000000))
+        begin
+          red_new   = red_reg + 4'h1;
+          red_we    = 1;
+          green_new = green_reg + 4'h3;
+          green_we  = 1;
+          blue_new  = blue_reg + 4'h5;
+          blue_we   = 1;
+        end
 
       if (button0_reg)
         begin
