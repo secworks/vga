@@ -56,17 +56,19 @@ module vga(
   //----------------------------------------------------------------
   // Internal constant and parameter definitions.
   //----------------------------------------------------------------
-  parameter RED_DEFAULT   = 4'hf;
-  parameter GREEN_DEFAULT = 4'hf;
-  parameter BLUE_DEFAULT  = 4'hf;
+  parameter RED_DEFAULT      = 4'hf;
+  parameter GREEN_DEFAULT    = 4'hf;
+  parameter BLUE_DEFAULT     = 4'hf;
 
-  parameter START_OF_LINE = 11'h000;
-  parameter END_OF_LINE   = 11'h63e;
-  parameter END_OF_PIXELS = 11'h57e;
+  parameter START_OF_LINE    = 11'h000;
+  parameter END_OF_LINE      = 11'h63e;
+  parameter END_OF_PIXELS    = 11'h57e;
 
   parameter END_OF_SCREEN    = 11'h20c;
   parameter START_OF_DISPLAY = 11'h021;
   parameter END_OF_DISPLAY   = 11'h200;
+
+  parameter UPDATE_DELAY_MAX = 32'h002c4b40;
 
 
   //----------------------------------------------------------------
@@ -94,6 +96,10 @@ module vga(
 
   reg          button0_reg;
   reg          button1_reg;
+
+  reg [31 : 0] delay_ctr_reg;
+  reg [31 : 0] delay_ctr_new;
+  reg          delay_ctr_we;
 
   reg [10 : 0] row_cycle_ctr_reg;
   reg [10 : 0] row_cycle_ctr_new;
@@ -138,22 +144,28 @@ module vga(
     begin
       if (!reset_n)
         begin
-          red_reg           <= RED_DEFAULT;
-          green_reg         <= GREEN_DEFAULT;
-          blue_reg          <= BLUE_DEFAULT;
-          vsync_reg         <= 0;
-          hsync_reg         <= 0;
-          button0_reg       <= 0;
-          button1_reg       <= 0;
-          row_cycle_ctr_reg <= 11'h000;
-          line_ctr_reg      <= 11'h000;
-          test_clk_reg      <= 0;
+          red_reg             <= RED_DEFAULT;
+          green_reg           <= GREEN_DEFAULT;
+          blue_reg            <= BLUE_DEFAULT;
+          vsync_reg           <= 0;
+          hsync_reg           <= 0;
+          button0_reg         <= 0;
+          button1_reg         <= 0;
+          debug_delay_ctr_reg <= 32'h00000000;
+          row_cycle_ctr_reg   <= 11'h000;
+          line_ctr_reg        <= 11'h000;
+          test_clk_reg        <= 0;
         end
       else
         begin
           button0_reg  <= button0;
           button1_reg  <= button1;
           test_clk_reg <= ~test_clk_reg;
+
+          if (delay_ctr_we)
+            begin
+              delay_ctr_reg <= delay_ctr_new;
+            end
 
           if (row_cycle_ctr_we)
             begin
@@ -192,6 +204,23 @@ module vga(
         end
     end // reg_update
 
+
+  //----------------------------------------------------------------
+  // delay_ctr
+  //----------------------------------------------------------------
+  always @*
+    begin : delay_ctr
+      if (button1_reg)
+        begin
+          delay_ctr_we  = 1;
+          delay_ctr_new = delay_ctr_reg + 32'h00000001;
+
+          if (delay_ctr_reg == UPDATE_DELAY_MAX)
+            begin
+              delay_ctr_new = 32'h00000000;
+            end
+        end
+    end
 
   //----------------------------------------------------------------
   // row_cycle_ctr
@@ -311,7 +340,7 @@ module vga(
   //----------------------------------------------------------------
   // rgb_update
   //----------------------------------------------------------------
-  always @*
+  always @*1p
     begin : rgb_update
       red_new = 4'h0;
       red_we  = 0;
