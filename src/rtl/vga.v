@@ -2,7 +2,7 @@
 //
 // vga.v
 // -----
-// A very simple BGA interface.
+// A very simple VGA interface.
 //
 //
 // Author: Joachim Strombergson
